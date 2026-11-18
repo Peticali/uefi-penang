@@ -16,6 +16,9 @@
 #include <Library/TimerLib.h>
 #include <Library/HobLib.h>
 
+// First argument (x0) of the previous stage, saved by ModuleEntryPoint.S
+extern UINT64  gSecEntryArg0;
+
 #include "Sec.h"
 
 #ifndef MDEPKG_NDEBUG
@@ -131,6 +134,13 @@ SecMain (VOID)
   }
 
   // Run Library Cconstructors
+  // PENANG (as UniXNU uefi-sheng): pass on the DT address the previous stage handed over in x0
+  {
+    UINT64  EntryArg = gSecEntryArg0;
+
+    BuildGuidDataHob (&gSiliciumEntryArgHobGuid, &EntryArg, sizeof (EntryArg));
+  }
+
   ProcessLibraryConstructorList ();
 
   // Decompress all FVs

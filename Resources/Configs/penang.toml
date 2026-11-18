@@ -1,0 +1,31 @@
+#
+# Motorola Moto G53 5G (penang, SM4350 "Mannar"/holi)
+#
+
+#
+# Boot Shim Configs
+#
+[boot_shim]
+requires_kernel_header = true
+
+#
+# UEFI FD Configs (stock uefiplat.cfg "UEFI FD")
+#
+[uefi_fd]
+base = 0x9FC00000
+size = 0x300000
+
+#
+# Android Boot Image Kernel Configs
+#
+[boot_image_kernel]
+kernel_compression = "none"
+append_dtb         = false
+
+#
+# Android Boot Image Configs: penang's ABL wants header v3 (DTB from vendor_boot) and the stock os_version
+#
+[boot_image]
+header_version = 3
+os_version     = "11.0.0"
+os_patch_level = "2025-10"

@@ -1,0 +1,27 @@
+[Defines]
+  INF_VERSION    = 0x00010005
+  BASE_NAME      = PenangDisplayKeepDxe
+  FILE_GUID      = 6C1D1E0A-6E0B-4B7D-9A37-5D2E3F1A9B41
+  MODULE_TYPE    = DXE_DRIVER
+  VERSION_STRING = 1.0
+  ENTRY_POINT    = PenangDisplayKeepEntry
+
+[Sources]
+  PenangDisplayKeepDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  QcomPkg/QcomPkg.dec
+
+[LibraryClasses]
+  UefiDriverEntryPoint
+  UefiBootServicesTableLib
+  DebugLib
+  IoLib
+  UefiLib
+
+[Protocols]
+  gEfiClockProtocolGuid
+
+[Depex]
+  TRUE

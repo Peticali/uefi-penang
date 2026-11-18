@@ -129,7 +129,8 @@ GetFontScale ()
   UINT32 ShorterDimension = (FB_WIDTH < FB_HEIGHT) ? FB_WIDTH : FB_HEIGHT;
 
   // Return Calculated Font Scale
-  return (ShorterDimension < 426) ? 1 : (UINT8)(ShorterDimension / 426);
+  // PENANG: 720 px wide gives 1 (5x16 glyphs, unreadable on a phone photo): at least 3
+  return (ShorterDimension < 1278) ? 3 : (UINT8)(ShorterDimension / 426);
 }
 
 VOID
@@ -238,12 +239,52 @@ GetFrameBufferMemory (
   return EFI_SUCCESS;
 }
 
+//
+// PENANG: every console byte also goes to Linux's ramoops console zone (moto g53 dtbo ramoops_mem 0xaf000000: console
+// at +0x3f800, 0x40000 bytes, header {u32 sig "DBGC", u32 start, u32 size}). DDR survives the warm reset; the next
+// Linux boot (penang UMS recovery) hands it back as /sys/fs/pstore/console-ramoops-0. Each module links its own copy
+// of this library, so the write position lives in that header, not in a variable.
+//
+#define PENANG_PRAM_BASE  0xAF03F800ULL
+#define PENANG_PRAM_SIG   0x43474244U
+#define PENANG_PRAM_DATA  (0x40000U - 12U)
+
+STATIC
+VOID
+PenangPramWrite (
+  IN UINT8 *Buffer,
+  IN UINTN  NumberOfBytes)
+{
+  volatile UINT32 *Header = (volatile UINT32 *)(UINTN)PENANG_PRAM_BASE;
+  volatile UINT8  *Data   = (volatile UINT8 *)(UINTN)(PENANG_PRAM_BASE + 12);
+
+  if (Header[0] != PENANG_PRAM_SIG || Header[1] >= PENANG_PRAM_DATA || Header[2] > PENANG_PRAM_DATA) {
+    Header[0] = PENANG_PRAM_SIG;
+    Header[1] = 0;
+    Header[2] = 0;
+  }
+
+  UINT32 Start = Header[1];
+  UINT32 Size  = Header[2];
+  for (UINTN i = 0; i < NumberOfBytes; i++) {
+    Data[Start] = Buffer[i];
+    Start = (Start + 1) % PENANG_PRAM_DATA;
+    if (Size < PENANG_PRAM_DATA) {
+      Size++;
+    }
+  }
+  Header[1] = Start;
+  Header[2] = Size;
+}
+
 UINTN
 EFIAPI
 SerialPortWrite (
   IN UINT8 *Buffer,
   IN UINTN  NumberOfBytes)
 {
+  PenangPramWrite (Buffer, NumberOfBytes);
+
   EFI_STATUS           Status;
   EFI_PHYSICAL_ADDRESS FbBase;
   UINT64               FbLength;

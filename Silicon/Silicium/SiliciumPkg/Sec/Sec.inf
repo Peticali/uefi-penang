@@ -51,6 +51,7 @@
   gArmMpCoreInfoPpiGuid
 
 [Guids]
+  gSiliciumEntryArgHobGuid
   gArmMpCoreInfoGuid
 
 [Pcd]
